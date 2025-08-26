@@ -3,13 +3,14 @@
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, TrendingUp, DollarSign, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { mockCategories, Category } from '../../data/mockData';
+import { Category } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
 import AddCategoryModal from '../Modals/AddCategoryModal';
 import EditCategoryModal from '../Modals/EditCategoryModal';
 import Notification from '../UI/Notification';
 
 export default function CategoriesGrid() {
-  const [categories, setCategories] = useState(mockCategories);
+  const { categories, addCategory, updateCategory, deleteCategory } = useData();
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -26,7 +27,7 @@ export default function CategoriesGrid() {
   });
 
   const handleDelete = (id: string) => {
-    setCategories(categories.filter(category => category.id !== id));
+    deleteCategory(id);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -36,7 +37,7 @@ export default function CategoriesGrid() {
   };
 
   const handleAddCategory = (category: any) => {
-    setCategories(prev => [...prev, category]);
+    addCategory(category);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -51,9 +52,7 @@ export default function CategoriesGrid() {
   };
 
   const handleEditSave = (updatedCategory: Category) => {
-    setCategories(categories.map(category => 
-      category.id === updatedCategory.id ? updatedCategory : category
-    ));
+    updateCategory(updatedCategory);
     setNotification({
       isVisible: true,
       type: 'success',

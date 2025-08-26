@@ -3,14 +3,16 @@
 import { motion } from 'framer-motion';
 import { Edit2, Filter, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { categories, mockExpenses, Expense } from '../../data/mockData';
+import { categories, Expense } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
+import { formatPeso } from '../../lib/currency';
 import EditExpenseModal from '../Modals/EditExpenseModal';
 import Notification from '../UI/Notification';
 
 export default function ExpenseTable() {
+  const { expenses, deleteExpense, updateExpense } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [expenses, setExpenses] = useState(mockExpenses);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [notification, setNotification] = useState<{
@@ -25,15 +27,17 @@ export default function ExpenseTable() {
     message: '',
   });
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || expense.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredExpenses = expenses
+    .filter(expense => {
+      const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'All Categories' || expense.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleDelete = (id: string) => {
-    setExpenses(expenses.filter(expense => expense.id !== id));
+    deleteExpense(id);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -48,9 +52,7 @@ export default function ExpenseTable() {
   };
 
   const handleEditSave = (updatedExpense: Expense) => {
-    setExpenses(expenses.map(expense => 
-      expense.id === updatedExpense.id ? updatedExpense : expense
-    ));
+    updateExpense(updatedExpense);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -130,7 +132,7 @@ export default function ExpenseTable() {
                   {expense.description}
                 </td>
                 <td className="py-4 px-4 text-right font-semibold text-gray-900 dark:text-white">
-                  ${expense.amount.toFixed(2)}
+                  {formatPeso(expense.amount)}
                 </td>
                 <td className="py-4 px-4 text-right">
                   <div className="flex justify-end space-x-2">

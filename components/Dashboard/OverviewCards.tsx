@@ -2,44 +2,63 @@
 
 import { motion } from 'framer-motion';
 import { DollarSign, Target, TrendingDown, TrendingUp } from 'lucide-react';
-
-const cards = [
-  {
-    title: 'Total Expenses',
-    value: '$2,847.32',
-    change: '+12.5%',
-    trend: 'up',
-    icon: DollarSign,
-    color: 'primary',
-  },
-  {
-    title: 'Top Category',
-    value: 'Food & Dining',
-    change: '$987.50',
-    trend: 'neutral',
-    icon: TrendingUp,
-    color: 'indigo',
-  },
-  {
-    title: 'Budget Progress',
-    value: '67%',
-    change: '$1,652.68 left',
-    trend: 'down',
-    icon: Target,
-    color: 'success',
-    progress: 67,
-  },
-  {
-    title: 'Daily Average',
-    value: '$94.91',
-    change: '-8.2%',
-    trend: 'down',
-    icon: TrendingDown,
-    color: 'danger',
-  },
-];
+import { useData } from '../../context/DataContext';
+import { formatPeso } from '../../lib/currency';
 
 export default function OverviewCards() {
+  const { expenses, categories, getBudgetProgress } = useData();
+  
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  
+  const categoryTotals = expenses.reduce((acc, expense) => {
+    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const topCategory = Object.entries(categoryTotals)
+    .sort(([,a], [,b]) => b - a)[0];
+  
+  const monthlyBudget = getBudgetProgress('monthly');
+  const dailyBudget = getBudgetProgress('daily');
+  const weeklyBudget = getBudgetProgress('weekly');
+  
+  const cards = [
+    {
+      title: 'Monthly Budget',
+      value: monthlyBudget.limit > 0 ? formatPeso(monthlyBudget.spent) : 'No budget set',
+      change: monthlyBudget.limit > 0 ? `${formatPeso(monthlyBudget.remaining)} left` : 'Click to set budget',
+      trend: monthlyBudget.percentage > 80 ? 'up' : monthlyBudget.percentage > 50 ? 'neutral' : 'down',
+      icon: Target,
+      color: monthlyBudget.percentage > 80 ? 'danger' : monthlyBudget.percentage > 50 ? 'warning' : 'success',
+      progress: monthlyBudget.percentage,
+    },
+    {
+      title: 'Weekly Budget',
+      value: weeklyBudget.limit > 0 ? formatPeso(weeklyBudget.spent) : 'No budget set',
+      change: weeklyBudget.limit > 0 ? `${formatPeso(weeklyBudget.remaining)} left` : 'Click to set budget',
+      trend: weeklyBudget.percentage > 80 ? 'up' : weeklyBudget.percentage > 50 ? 'neutral' : 'down',
+      icon: TrendingUp,
+      color: weeklyBudget.percentage > 80 ? 'danger' : weeklyBudget.percentage > 50 ? 'warning' : 'indigo',
+      progress: weeklyBudget.percentage,
+    },
+    {
+      title: 'Daily Budget',
+      value: dailyBudget.limit > 0 ? formatPeso(dailyBudget.spent) : 'No budget set',
+      change: dailyBudget.limit > 0 ? `${formatPeso(dailyBudget.remaining)} left` : 'Click to set budget',
+      trend: dailyBudget.percentage > 80 ? 'up' : dailyBudget.percentage > 50 ? 'neutral' : 'down',
+      icon: DollarSign,
+      color: dailyBudget.percentage > 80 ? 'danger' : dailyBudget.percentage > 50 ? 'warning' : 'primary',
+      progress: dailyBudget.percentage,
+    },
+    {
+      title: 'Top Category',
+      value: topCategory ? topCategory[0] : 'No expenses',
+      change: topCategory ? formatPeso(topCategory[1]) : formatPeso(0),
+      trend: 'neutral',
+      icon: TrendingDown,
+      color: 'success',
+    },
+  ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {cards.map((card, index) => {

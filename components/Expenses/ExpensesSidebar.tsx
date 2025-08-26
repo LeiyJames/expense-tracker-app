@@ -2,19 +2,24 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, CreditCard } from 'lucide-react';
-import { mockExpenses, mockCategories } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
+import { formatPeso } from '../../lib/currency';
 
 export default function ExpensesSidebar() {
-  const totalExpenses = mockExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const thisMonthExpenses = mockExpenses
+  const { expenses, categories } = useData();
+  
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const thisMonthExpenses = expenses
     .filter(expense => new Date(expense.date).getMonth() === new Date().getMonth())
     .reduce((sum, expense) => sum + expense.amount, 0);
   
-  const topCategories = mockCategories
+  const topCategories = categories
     .sort((a, b) => b.totalSpent - a.totalSpent)
     .slice(0, 3);
 
-  const recentExpenses = mockExpenses.slice(0, 5);
+  const recentExpenses = expenses
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -37,7 +42,7 @@ export default function ExpensesSidebar() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
-                <p className="font-bold text-gray-900 dark:text-white">${totalExpenses.toFixed(2)}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{formatPeso(totalExpenses)}</p>
               </div>
             </div>
           </div>
@@ -49,7 +54,7 @@ export default function ExpensesSidebar() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">This Month</p>
-                <p className="font-bold text-gray-900 dark:text-white">${thisMonthExpenses.toFixed(2)}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{formatPeso(thisMonthExpenses)}</p>
               </div>
             </div>
           </div>
@@ -61,7 +66,7 @@ export default function ExpensesSidebar() {
               </div>
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Transactions</p>
-                <p className="font-bold text-gray-900 dark:text-white">{mockExpenses.length}</p>
+                <p className="font-bold text-gray-900 dark:text-white">{expenses.length}</p>
               </div>
             </div>
           </div>
@@ -96,7 +101,7 @@ export default function ExpensesSidebar() {
                 </div>
               </div>
               <p className="font-bold text-gray-900 dark:text-white">
-                ${category.totalSpent.toFixed(2)}
+                {formatPeso(category.totalSpent)}
               </p>
             </div>
           ))}
@@ -126,7 +131,7 @@ export default function ExpensesSidebar() {
                 </p>
               </div>
               <p className="font-bold text-gray-900 dark:text-white">
-                ${expense.amount.toFixed(2)}
+                {formatPeso(expense.amount)}
               </p>
             </div>
           ))}

@@ -3,17 +3,19 @@
 import { motion } from 'framer-motion';
 import { Edit2, Filter, Search, Trash2, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
-import { categories, paymentMethods, mockExpenses, Expense } from '../../data/mockData';
+import { categories, paymentMethods, Expense } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
+import { formatPeso } from '../../lib/currency';
 import EditExpenseModal from '../Modals/EditExpenseModal';
 import Notification from '../UI/Notification';
 
 export default function ExpensesTable() {
+  const { expenses, deleteExpense, updateExpense } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('All Methods');
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
   const [showFilters, setShowFilters] = useState(false);
-  const [expenses, setExpenses] = useState(mockExpenses);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [notification, setNotification] = useState<{
@@ -28,19 +30,21 @@ export default function ExpensesTable() {
     message: '',
   });
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || expense.category === selectedCategory;
-    const matchesPaymentMethod = selectedPaymentMethod === 'All Methods' || expense.paymentMethod === selectedPaymentMethod;
-    const matchesAmountMin = !amountRange.min || expense.amount >= parseFloat(amountRange.min);
-    const matchesAmountMax = !amountRange.max || expense.amount <= parseFloat(amountRange.max);
-    
-    return matchesSearch && matchesCategory && matchesPaymentMethod && matchesAmountMin && matchesAmountMax;
-  });
+  const filteredExpenses = expenses
+    .filter(expense => {
+      const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'All Categories' || expense.category === selectedCategory;
+      const matchesPaymentMethod = selectedPaymentMethod === 'All Methods' || expense.paymentMethod === selectedPaymentMethod;
+      const matchesAmountMin = !amountRange.min || expense.amount >= parseFloat(amountRange.min);
+      const matchesAmountMax = !amountRange.max || expense.amount <= parseFloat(amountRange.max);
+      
+      return matchesSearch && matchesCategory && matchesPaymentMethod && matchesAmountMin && matchesAmountMax;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const handleDelete = (id: string) => {
-    setExpenses(expenses.filter(expense => expense.id !== id));
+    deleteExpense(id);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -55,9 +59,7 @@ export default function ExpensesTable() {
   };
 
   const handleEditSave = (updatedExpense: Expense) => {
-    setExpenses(expenses.map(expense => 
-      expense.id === updatedExpense.id ? updatedExpense : expense
-    ));
+    updateExpense(updatedExpense);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -216,7 +218,7 @@ export default function ExpensesTable() {
                   </span>
                 </td>
                 <td className="py-4 px-4 text-right font-semibold text-gray-900 dark:text-white">
-                  ${expense.amount.toFixed(2)}
+                  {formatPeso(expense.amount)}
                 </td>
                 <td className="py-4 px-4 text-right">
                   <div className="flex justify-end space-x-2">

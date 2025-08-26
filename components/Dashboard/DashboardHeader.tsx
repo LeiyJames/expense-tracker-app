@@ -1,14 +1,18 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CalendarDays, Plus } from 'lucide-react';
+import { CalendarDays, Plus, Target } from 'lucide-react';
 import { useState } from 'react';
+import { useData } from '../../context/DataContext';
 import AddExpenseModal from '../Modals/AddExpenseModal';
+import BudgetModal from '../Modals/BudgetModal';
 import Notification from '../UI/Notification';
 
 export default function DashboardHeader() {
+  const { addExpense } = useData();
   const [dateRange, setDateRange] = useState('Last 30 days');
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [notification, setNotification] = useState<{
     isVisible: boolean;
     type: 'success' | 'error' | 'info';
@@ -29,8 +33,7 @@ export default function DashboardHeader() {
   });
 
   const handleAddExpense = (expense: any) => {
-    // In a real app, this would save to a database
-    console.log('Adding expense:', expense);
+    addExpense(expense);
     setNotification({
       isVisible: true,
       type: 'success',
@@ -72,6 +75,16 @@ export default function DashboardHeader() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => setIsBudgetModalOpen(true)}
+            className="btn-secondary flex items-center space-x-2"
+          >
+            <Target size={20} />
+            <span>Set Budget</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setIsAddExpenseModalOpen(true)}
             className="btn-primary flex items-center space-x-2"
           >
@@ -85,6 +98,11 @@ export default function DashboardHeader() {
         isOpen={isAddExpenseModalOpen}
         onClose={() => setIsAddExpenseModalOpen(false)}
         onSave={handleAddExpense}
+      />
+
+      <BudgetModal
+        isOpen={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
       />
 
       <Notification

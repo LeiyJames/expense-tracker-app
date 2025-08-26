@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BarChart3, CreditCard, Download, Home, Tags } from 'lucide-react';
+import { BarChart3, CreditCard, Download, Home, Tags, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
@@ -9,6 +9,7 @@ const menuItems = [
   { icon: Home, label: 'Dashboard', href: '/' },
   { icon: CreditCard, label: 'Expenses', href: '/expenses' },
   { icon: Tags, label: 'Categories', href: '/categories' },
+  { icon: Target, label: 'Budgets', href: '/budgets' },
   { icon: BarChart3, label: 'Analytics', href: '/analytics' },
   { icon: Download, label: 'Export', href: '/export' },
 ];

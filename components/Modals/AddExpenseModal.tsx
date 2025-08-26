@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, DollarSign, Calendar, Tag, CreditCard, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { categories, paymentMethods } from '../../data/mockData';
+import { getCurrencySymbol } from '../../lib/currency';
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -130,18 +131,23 @@ export default function AddExpenseModal({ isOpen, onClose, onSave }: AddExpenseM
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <DollarSign size={16} className="inline mr-2" />
+                    <span className="inline-block w-4 h-4 mr-2 text-center">{getCurrencySymbol()}</span>
                     Amount
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                    className="input"
-                    placeholder="0.00"
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">
+                      {getCurrencySymbol()}
+                    </span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.amount}
+                      onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                      className="input pl-10"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div>

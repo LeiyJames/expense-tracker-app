@@ -3,10 +3,12 @@
 import { motion } from 'framer-motion';
 import { CalendarDays, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useData } from '../../context/DataContext';
 import AddExpenseModal from '../Modals/AddExpenseModal';
 import Notification from '../UI/Notification';
 
 export default function ExpensesHeader() {
+  const { addExpense } = useData();
   const [dateRange, setDateRange] = useState('Last 30 days');
   const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
   const [notification, setNotification] = useState<{
@@ -22,7 +24,7 @@ export default function ExpensesHeader() {
   });
 
   const handleAddExpense = (expense: any) => {
-    console.log('Adding expense:', expense);
+    addExpense(expense);
     setNotification({
       isVisible: true,
       type: 'success',
