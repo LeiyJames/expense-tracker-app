@@ -15,13 +15,23 @@ export default function ExpensesSidebar() {
     .reduce((sum, expense) => sum + expense.amount, 0);
   
   const topCategories = useMemo(() => {
-    const categoryTotals = expenses.reduce((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    const categoryData = expenses.reduce((acc, expense) => {
+      if (!acc[expense.category]) {
+        acc[expense.category] = {
+          name: expense.category,
+          totalSpent: 0,
+          transactionCount: 0,
+          // Default category styling - you can customize these
+          color: 'bg-primary-500',
+          icon: '📊'
+        };
+      }
+      acc[expense.category].totalSpent += expense.amount;
+      acc[expense.category].transactionCount += 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { name: string; totalSpent: number; transactionCount: number; color: string; icon: string }>);
 
-    return Object.entries(categoryTotals)
-      .map(([name, totalSpent]) => ({ name, totalSpent }))
+    return Object.values(categoryData)
       .sort((a, b) => b.totalSpent - a.totalSpent)
       .slice(0, 3);
   }, [expenses]);
@@ -95,7 +105,7 @@ export default function ExpensesSidebar() {
         
         <div className="space-y-3">
           {topCategories.map((category, index) => (
-            <div key={category.id} className="flex items-center justify-between">
+            <div key={category.name} className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className={`w-8 h-8 ${category.color} rounded-lg flex items-center justify-center text-white text-sm`}>
                   {category.icon}
