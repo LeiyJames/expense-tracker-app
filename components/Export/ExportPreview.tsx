@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { Eye, FileText, Download } from 'lucide-react';
-import { mockExpenses } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
 
 export default function ExportPreview() {
-  const previewData = mockExpenses.slice(0, 10); // Show first 10 for preview
+  const { expenses } = useData();
+  const previewData = expenses.slice(0, 10); // Show first 10 for preview
 
   return (
     <motion.div
@@ -34,7 +35,7 @@ export default function ExportPreview() {
           <div className="text-right">
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Records</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              {mockExpenses.length}
+              {expenses.length}
             </p>
           </div>
         </div>
@@ -52,7 +53,7 @@ export default function ExportPreview() {
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
             <p className="font-semibold text-gray-900 dark:text-white">
-              ${mockExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+              ₱{expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
             </p>
           </div>
         </div>
@@ -62,7 +63,7 @@ export default function ExportPreview() {
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-gray-900 dark:text-white">
-            Data Preview ({previewData.length} of {mockExpenses.length} records)
+            Data Preview ({previewData.length} of {expenses.length} records)
           </h4>
           <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded-full">
             Preview Mode
@@ -107,7 +108,7 @@ export default function ExportPreview() {
                     </span>
                   </td>
                   <td className="py-3 px-2 text-right font-semibold text-gray-900 dark:text-white">
-                    ${expense.amount.toFixed(2)}
+                    ₱{expense.amount.toFixed(2)}
                   </td>
                   <td className="py-3 px-2 text-gray-600 dark:text-gray-400 text-xs">
                     {expense.notes || '-'}
@@ -118,10 +119,10 @@ export default function ExportPreview() {
           </table>
         </div>
 
-        {mockExpenses.length > previewData.length && (
+        {expenses.length > previewData.length && (
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              + {mockExpenses.length - previewData.length} more records will be included in the export
+              + {expenses.length - previewData.length} more records will be included in the export
             </p>
           </div>
         )}

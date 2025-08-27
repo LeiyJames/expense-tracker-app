@@ -9,17 +9,46 @@ import {
 import { motion } from 'framer-motion';
 import { Pie } from 'react-chartjs-2';
 import { TrendingUp, TrendingDown, DollarSign, Target } from 'lucide-react';
-import { mockCategories } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
+import { useMemo } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function CategoryInsights() {
-  const totalSpent = mockCategories.reduce((sum, cat) => sum + cat.totalSpent, 0);
-  
+  const { expenses } = useData();
+
+  const categoryData = useMemo(() => {
+    if (expenses.length === 0) {
+      return {
+        categoryTotals: {},
+        totalSpent: 0,
+        categories: [],
+        amounts: [],
+        transactionCounts: {},
+      };
+    }
+
+    const categoryTotals = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const transactionCounts = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categories = Object.keys(categoryTotals);
+    const amounts = Object.values(categoryTotals);
+    const totalSpent = amounts.reduce((sum, amount) => sum + amount, 0);
+
+    return { categoryTotals, totalSpent, categories, amounts, transactionCounts };
+  }, [expenses]);
+
   const pieData = {
-    labels: mockCategories.map(cat => cat.name),
+    labels: categoryData.categories.length > 0 ? categoryData.categories : ['No data'],
     datasets: [{
-      data: mockCategories.map(cat => cat.totalSpent),
+      data: categoryData.amounts.length > 0 ? categoryData.amounts : [1],
       backgroundColor: [
         '#3b82f6',
         '#10b981',
@@ -27,6 +56,10 @@ export default function CategoryInsights() {
         '#f59e0b',
         '#ef4444',
         '#06b6d4',
+        '#8b5a3c',
+        '#dc2626',
+        '#059669',
+        '#7c3aed'
       ],
       borderWidth: 0,
     }],
@@ -50,40 +83,86 @@ export default function CategoryInsights() {
     },
   };
 
-  const insights = [
-    {
-      icon: TrendingUp,
-      title: 'Highest Spending',
-      description: 'Food & Dining',
-      value: '$240.53',
-      color: 'text-success-600',
-      bgColor: 'bg-success-100',
-    },
-    {
-      icon: TrendingDown,
-      title: 'Lowest Spending',
-      description: 'Entertainment',
-      value: '$39.99',
-      color: 'text-primary-600',
-      bgColor: 'bg-primary-100',
-    },
-    {
-      icon: DollarSign,
-      title: 'Average per Category',
-      description: 'Across all categories',
-      value: `$${(totalSpent / mockCategories.length).toFixed(2)}`,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
-    },
-    {
-      icon: Target,
-      title: 'Most Transactions',
-      description: 'Food & Dining',
-      value: '4 transactions',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-    },
-  ];
+  const insights = useMemo(() => {
+    if (categoryData.categories.length === 0) {
+      return [
+        {
+          icon: TrendingUp,
+          title: 'No Data',
+          description: 'Add expenses to see insights',
+          value: '₱0.00',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100',
+        },
+        {
+          icon: TrendingDown,
+          title: 'No Data',
+          description: 'Add expenses to see insights',
+          value: '₱0.00',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100',
+        },
+        {
+          icon: DollarSign,
+          title: 'No Data',
+          description: 'Add expenses to see insights',
+          value: '₱0.00',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100',
+        },
+        {
+          icon: Target,
+          title: 'No Data',
+          description: 'Add expenses to see insights',
+          value: '0 transactions',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-100',
+        },
+      ];
+    }
+
+    const sortedByAmount = Object.entries(categoryData.categoryTotals).sort(([,a], [,b]) => b - a);
+    const sortedByTransactions = Object.entries(categoryData.transactionCounts).sort(([,a], [,b]) => b - a);
+    
+    const highest = sortedByAmount[0];
+    const lowest = sortedByAmount[sortedByAmount.length - 1];
+    const mostTransactions = sortedByTransactions[0];
+
+    return [
+      {
+        icon: TrendingUp,
+        title: 'Highest Spending',
+        description: highest[0],
+        value: `₱${highest[1].toFixed(2)}`,
+        color: 'text-success-600',
+        bgColor: 'bg-success-100',
+      },
+      {
+        icon: TrendingDown,
+        title: 'Lowest Spending',
+        description: lowest[0],
+        value: `₱${lowest[1].toFixed(2)}`,
+        color: 'text-primary-600',
+        bgColor: 'bg-primary-100',
+      },
+      {
+        icon: DollarSign,
+        title: 'Average per Category',
+        description: 'Across all categories',
+        value: `₱${(categoryData.totalSpent / categoryData.categories.length).toFixed(2)}`,
+        color: 'text-indigo-600',
+        bgColor: 'bg-indigo-100',
+      },
+      {
+        icon: Target,
+        title: 'Most Transactions',
+        description: mostTransactions[0],
+        value: `${mostTransactions[1]} transactions`,
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-100',
+      },
+    ];
+  }, [categoryData]);
 
   return (
     <motion.div
@@ -154,13 +233,13 @@ export default function CategoryInsights() {
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Total Categories</p>
                 <p className="font-bold text-gray-900 dark:text-white">
-                  {mockCategories.length}
+                  {categoryData.categories.length}
                 </p>
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-400">Total Spent</p>
                 <p className="font-bold text-gray-900 dark:text-white">
-                  ${totalSpent.toFixed(2)}
+                  ₱{categoryData.totalSpent.toFixed(2)}
                 </p>
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Edit2, Trash2, TrendingUp, DollarSign, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Category } from '../../data/mockData';
 import { useData } from '../../context/DataContext';
 import AddCategoryModal from '../Modals/AddCategoryModal';
@@ -10,7 +10,7 @@ import EditCategoryModal from '../Modals/EditCategoryModal';
 import Notification from '../UI/Notification';
 
 export default function CategoriesGrid() {
-  const { categories, addCategory, updateCategory, deleteCategory } = useData();
+  const { categories, expenses, addCategory, updateCategory, deleteCategory } = useData();
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -61,6 +61,21 @@ export default function CategoriesGrid() {
     });
   };
 
+  // Calculate dynamic stats for each category
+  const categoriesWithStats = useMemo(() => {
+    return categories.map(category => {
+      const categoryExpenses = expenses.filter(expense => expense.category === category.name);
+      const totalSpent = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const transactionCount = categoryExpenses.length;
+      
+      return {
+        ...category,
+        totalSpent,
+        transactionCount,
+      };
+    });
+  }, [categories, expenses]);
+
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
@@ -69,7 +84,7 @@ export default function CategoriesGrid() {
       className="mb-8"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category, index) => (
+        {categoriesWithStats.map((category, index) => (
           <motion.div
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
@@ -120,7 +135,7 @@ export default function CategoriesGrid() {
                   <span className="text-sm text-gray-600 dark:text-gray-400">Total Spent</span>
                 </div>
                 <span className="font-bold text-xl text-gray-900 dark:text-white">
-                  ${category.totalSpent.toFixed(2)}
+                  ₱{category.totalSpent.toFixed(2)}
                 </span>
               </div>
 
@@ -130,7 +145,7 @@ export default function CategoriesGrid() {
                   <span className="text-sm text-gray-600 dark:text-gray-400">Average</span>
                 </div>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  ${(category.totalSpent / category.transactionCount).toFixed(2)}
+                  ₱{category.transactionCount > 0 ? (category.totalSpent / category.transactionCount).toFixed(2) : '0.00'}
                 </span>
               </div>
 
@@ -156,7 +171,7 @@ export default function CategoriesGrid() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: categories.length * 0.1 }}
+          transition={{ delay: categoriesWithStats.length * 0.1 }}
           whileHover={{ y: -4, scale: 1.02 }}
           onClick={() => setIsAddCategoryModalOpen(true)}
           className="card p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 transition-all duration-300 cursor-pointer"

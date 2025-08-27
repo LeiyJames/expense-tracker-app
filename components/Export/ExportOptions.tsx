@@ -3,12 +3,14 @@
 import { motion } from 'framer-motion';
 import { FileText, Download, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import { useState } from 'react';
-import { categories, mockExpenses } from '../../data/mockData';
+import { categories } from '../../data/mockData';
+import { useData } from '../../context/DataContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Notification from '../UI/Notification';
 
 export default function ExportOptions() {
+  const { expenses } = useData();
   const [selectedFormat, setSelectedFormat] = useState('csv');
   const [dateRange, setDateRange] = useState({ start: '2024-01-01', end: '2024-01-31' });
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['All Categories']);
@@ -68,7 +70,7 @@ export default function ExportOptions() {
   };
 
   const handleExport = () => {
-    const filteredData = mockExpenses.filter(expense => {
+    const filteredData = expenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       const startDate = new Date(dateRange.start);
       const endDate = new Date(dateRange.end);

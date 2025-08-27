@@ -15,6 +15,8 @@ import {
 } from 'chart.js';
 import { motion } from 'framer-motion';
 import { Line, Pie, Bar, Doughnut } from 'react-chartjs-2';
+import { useData } from '../../context/DataContext';
+import { useMemo } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -30,29 +32,65 @@ ChartJS.register(
 );
 
 export default function AnalyticsCharts() {
+  const { expenses, getBudgetProgress } = useData();
+
+  const chartData = useMemo(() => {
+    // Calculate category totals from real expense data
+    const categoryTotals = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categories = Object.keys(categoryTotals);
+    const amounts = Object.values(categoryTotals);
+    
+    const colors = [
+      '#3b82f6',
+      '#10b981', 
+      '#8b5cf6',
+      '#f59e0b',
+      '#ef4444',
+      '#06b6d4',
+      '#8b5a3c',
+      '#dc2626',
+      '#059669',
+      '#7c3aed'
+    ];
+
+    // Get last 5 months of data for trend chart
+    const monthlyData = expenses.reduce((acc, expense) => {
+      const monthKey = new Date(expense.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      acc[monthKey] = (acc[monthKey] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const sortedMonths = Object.keys(monthlyData).sort((a, b) => {
+      return new Date(`${a}-01`).getTime() - new Date(`${b}-01`).getTime();
+    }).slice(-5);
+    
+    const monthlyAmounts = sortedMonths.map(month => monthlyData[month] || 0);
+
+    return { categories, amounts, colors, sortedMonths, monthlyAmounts };
+  }, [expenses]);
+
+  const monthlyBudget = getBudgetProgress('monthly');
+
   // Pie Chart Data
   const pieData = {
-    labels: ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Utilities', 'Health & Fitness'],
+    labels: chartData.categories.length > 0 ? chartData.categories : ['No data'],
     datasets: [{
-      data: [240.53, 89.70, 289.98, 39.99, 169.44, 83.79],
-      backgroundColor: [
-        '#3b82f6',
-        '#10b981',
-        '#8b5cf6',
-        '#f59e0b',
-        '#ef4444',
-        '#06b6d4',
-      ],
+      data: chartData.amounts.length > 0 ? chartData.amounts : [1],
+      backgroundColor: chartData.categories.length > 0 ? chartData.colors.slice(0, chartData.categories.length) : ['#e5e7eb'],
       borderWidth: 0,
     }],
   };
 
   // Line Chart Data
   const lineData = {
-    labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+    labels: chartData.sortedMonths.length > 0 ? chartData.sortedMonths : ['No data'],
     datasets: [{
       label: 'Monthly Expenses',
-      data: [2100, 2850, 2200, 3100, 2847],
+      data: chartData.monthlyAmounts.length > 0 ? chartData.monthlyAmounts : [0],
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       tension: 0.4,
@@ -62,26 +100,12 @@ export default function AnalyticsCharts() {
 
   // Bar Chart Data
   const barData = {
-    labels: ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Utilities', 'Health & Fitness'],
+    labels: chartData.categories.length > 0 ? chartData.categories : ['No data'],
     datasets: [{
       label: 'Amount Spent',
-      data: [240.53, 89.70, 289.98, 39.99, 169.44, 83.79],
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(139, 92, 246, 0.8)',
-        'rgba(245, 158, 11, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(6, 182, 212, 0.8)',
-      ],
-      borderColor: [
-        '#3b82f6',
-        '#10b981',
-        '#8b5cf6',
-        '#f59e0b',
-        '#ef4444',
-        '#06b6d4',
-      ],
+      data: chartData.amounts.length > 0 ? chartData.amounts : [0],
+      backgroundColor: chartData.categories.length > 0 ? chartData.colors.slice(0, chartData.categories.length).map(c => c + '80') : ['rgba(229, 231, 235, 0.8)'],
+      borderColor: chartData.categories.length > 0 ? chartData.colors.slice(0, chartData.categories.length) : ['#e5e7eb'],
       borderWidth: 1,
     }],
   };
@@ -90,7 +114,7 @@ export default function AnalyticsCharts() {
   const donutData = {
     labels: ['Used Budget', 'Remaining Budget'],
     datasets: [{
-      data: [2847, 1653],
+      data: monthlyBudget.limit > 0 ? [monthlyBudget.spent, monthlyBudget.remaining] : [1, 0],
       backgroundColor: ['#ef4444', '#10b981'],
       borderWidth: 0,
     }],
@@ -234,7 +258,9 @@ export default function AnalyticsCharts() {
           <Doughnut data={donutData} options={chartOptions} />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">67%</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {monthlyBudget.limit > 0 ? Math.round(monthlyBudget.percentage) : 0}%
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Used</p>
             </div>
           </div>

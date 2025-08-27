@@ -4,18 +4,27 @@ import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, CreditCard } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { formatPeso } from '../../lib/currency';
+import { useMemo } from 'react';
 
 export default function ExpensesSidebar() {
-  const { expenses, categories } = useData();
+  const { expenses } = useData();
   
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const thisMonthExpenses = expenses
     .filter(expense => new Date(expense.date).getMonth() === new Date().getMonth())
     .reduce((sum, expense) => sum + expense.amount, 0);
   
-  const topCategories = categories
-    .sort((a, b) => b.totalSpent - a.totalSpent)
-    .slice(0, 3);
+  const topCategories = useMemo(() => {
+    const categoryTotals = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(categoryTotals)
+      .map(([name, totalSpent]) => ({ name, totalSpent }))
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 3);
+  }, [expenses]);
 
   const recentExpenses = expenses
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
